@@ -1,17 +1,19 @@
-from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from ninja import NinjaAPI, Query
+from ninja import Query
+from ninja_extra import NinjaExtraAPI, api_controller, route
+from ninja_jwt.authentication import JWTAuth
+from ninja_jwt.controller import NinjaJWTDefaultController
 
-from project.auth import AuthBearer, InvalidToken, InvalidCredentials
 from project.models import Label
 from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
-    LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, LoginSchema, \
-    LoginSuccessfulSchemaOut, ChangePasswordSchema, UserSchemaOut
+    LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
+    ChangePasswordSchema
 from project.services import EntryService, UserService
 
-api = NinjaAPI(title="LaJournal API", auth=AuthBearer())
+api = NinjaExtraAPI(title="LaJournal API")
+api.register_controllers(NinjaJWTDefaultController)
 
 
 def _get_user(request) -> User:
@@ -24,40 +26,6 @@ def _get_entry(request, entry_id: int):
 
 def _get_label(request, label_id: int):
     return get_object_or_404(_get_user(request).labels.all(), id=label_id)
-
-
-@api.exception_handler(InvalidCredentials)
-def on_invalid_token(request, exc):
-    return api.create_response(request, {"detail": "Username/password is not valid!"}, status=401)
-
-
-@api.exception_handler(InvalidToken)
-def on_invalid_token(request, exc):
-    return api.create_response(request, {"detail": "Invalid token supplied!"}, status=401)
-
-
-@api.post("/login", response=LoginSuccessfulSchemaOut, tags=['auth'], auth=None)
-def login(request, payload: LoginSchema):
-    user = authenticate(**payload.dict())
-    if user is None:
-        raise InvalidCredentials
-
-    return {
-        "user": user,
-        "token": UserService.generate_token(user=user).value
-    }
-
-
-@api.post("/logout", tags=['auth'])
-def logout(request):
-    UserService.invalidate_user_tokens(user=_get_user(request))
-    return {"success": True}
-
-
-@api.post("/validate-token", response=UserSchemaOut, tags=['auth'])
-def validate_token(request):
-    # If we get here, the token is valid
-    return _get_user(request)
 
 
 @api.put("/change-password", tags=['auth'])
@@ -152,48 +120,38 @@ def delete_entry(request, entry_id: int):
     return {"success": True}
 
 
-@api.get("/labels", response=list[LabelSchemaOut], tags=['labels'])
-def get_labels(request):
-    return _get_user(request).labels.all()
+@api_controller("/labels", tags=["labels"], auth=JWTAuth())
+class LabelsController:
+    @route.get("", response=list[LabelSchemaOut])
+    def get_labels(self):
+        return _get_user(self.context.request).labels.all()
 
+    @route.get("/{label_id}", response=LabelSchemaOut)
+    def get_label(self, label_id: int):
+        return _get_label(self.context.request, label_id)
 
-@api.get("/labels/{label_id}", response=LabelSchemaOut, tags=['labels'])
-def get_label(request, label_id: int):
-    return _get_label(request, label_id)
+    @route.get("/labels/{label_id}/paragraphs", response=list[LabelParagraphSchemaOut])
+    def get_label_paragraphs(self, label_id: int):
+        label = _get_label(self.context.request, label_id)
+        return label.paragraphs.all().order_by('-entry__date', 'id').select_related('entry')
 
+    @route.post("", response=LabelSchemaOut)
+    def create_label(self, payload: LabelSchemaIn):
+        return Label.objects.create(user=_get_user(self.context.request), **payload.dict())
 
-@api.get("/labels/{label_id}/paragraphs", response=list[LabelParagraphSchemaOut], tags=['labels'])
-def get_label_paragraphs(request, label_id: int):
-    label = _get_label(request, label_id)
-    return label.paragraphs.all().order_by('-entry__date', 'id').select_related('entry')
-
-
-@api.post("/labels", response=LabelSchemaOut, tags=['labels'])
-def create_label(request, payload: LabelSchemaIn):
-    return Label.objects.create(user=_get_user(request), **payload.dict())
-
-
-@api.put("/labels/{label_id}", response=LabelSchemaOut, tags=['labels'])
-def update_label(request, label_id: int, payload: LabelSchemaIn):
-    label = _get_label(request, label_id)
-    for attr, value in payload.dict().items():
-        setattr(label, attr, value)
-    label.save()
-    return label
-
-
-@api.patch("/labels/{label_id}", response=LabelSchemaOut, tags=['labels'])
-def update_label_partial(request, label_id: int, payload: LabelSchemaIn):
-    label = _get_label(request, label_id)
-    for attr, value in payload.dict().items():
-        if value is not None:
+    @route.put("/labels/{label_id}", response=LabelSchemaOut)
+    def update_label(self, label_id: int, payload: LabelSchemaIn):
+        label = _get_label(self.context.request, label_id)
+        for attr, value in payload.dict().items():
             setattr(label, attr, value)
-    label.save()
-    return label
+        label.save()
+        return label
+
+    @route.delete("/labels/{label_id}")
+    def delete_label(self, label_id: int):
+        label = _get_label(self.context.request, label_id)
+        label.delete()
+        return {"success": True}
 
 
-@api.delete("/labels/{label_id}", tags=['labels'])
-def delete_label(request, label_id: int):
-    label = _get_label(request, label_id)
-    label.delete()
-    return {"success": True}
+api.register_controllers(LabelsController)

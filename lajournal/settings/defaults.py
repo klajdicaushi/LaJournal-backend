@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
-SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
+SECRET_KEY = '7kao=4+@oo!1zdqme)b9!l)0%76rg5&k_-_3@ud!4w_1vpdcwd'
 
 # Application definition
 
@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'project',
+    'ninja_extra',
 ]
 
 MIDDLEWARE = [
