@@ -38,86 +38,74 @@ def change_password(request, payload: ChangePasswordSchema):
     return {"success": True}
 
 
-@api.get("/entries/stats", response=EntryStatsOut, tags=['entries'])
-def get_stats(request):
-    return EntryService.get_stats(user=_get_user(request))
+@api_controller("/entries", tags=["entries"], auth=JWTAuth())
+class EntriesController:
+    @route.get("/stats", response=EntryStatsOut)
+    def get_stats(self):
+        return EntryService.get_stats(user=_get_user(self.context.request))
 
+    @route.get("", response=list[JournalEntrySchemaOut])
+    def get_journal_entries(self, filters: JournalFiltersSchema = Query(...)):
+        entries = _get_user(self.context.request).journal_entries.all().order_by('-date', '-id')
+        for key, value in filters.dict().items():
+            if value is not None:
+                entries = entries.filter(**{key: value})
+        return entries.distinct()
 
-@api.get("/entries", response=list[JournalEntrySchemaOut], tags=['entries'])
-def get_journal_entries(request, filters: JournalFiltersSchema = Query(...)):
-    entries = _get_user(request).journal_entries.all().order_by('-date', '-id')
-    for key, value in filters.dict().items():
-        if value is not None:
-            entries = entries.filter(**{key: value})
-    return entries.distinct()
+    @route.get("/{entry_id}", response=JournalEntrySchemaOut)
+    def get_journal_entry(self, entry_id: int):
+        return _get_entry(self.context.request, entry_id)
 
+    @route.post("", response=JournalEntrySchemaOut)
+    def create_journal_entry(self, payload: JournalEntrySchemaIn):
+        entry_data = payload.dict()
+        return EntryService.create_entry(
+            user=_get_user(self.context.request),
+            entry_data=entry_data
+        )
 
-@api.get("/entries/{entry_id}", response=JournalEntrySchemaOut, tags=['entries'])
-def get_journal_entry(request, entry_id: int):
-    return _get_entry(request, entry_id)
+    @route.put("/{entry_id}", response=JournalEntrySchemaOut)
+    def update_entry(self, entry_id: int, payload: JournalEntrySchemaIn):
+        entry = _get_entry(self.context.request, entry_id)
+        new_entry_data = payload.dict()
+        return EntryService.update_entry(entry, new_entry_data)
 
+    @route.post("/{entry_id}/assign_label", response=JournalEntrySchemaOut)
+    def assign_label(self, entry_id: int, payload: AssignLabelSchemaIn):
+        entry = _get_entry(self.context.request, entry_id)
+        data = payload.dict()
 
-@api.post("/entries", response=JournalEntrySchemaOut, tags=['entries'])
-def create_journal_entry(request, payload: JournalEntrySchemaIn):
-    entry_data = payload.dict()
-    return EntryService.create_entry(
-        user=_get_user(request),
-        entry_data=entry_data
-    )
+        paragraphs = entry.paragraphs.filter(order__in=data.get('paragraph_orders'))
+        if paragraphs.count() != len(data.get('paragraph_orders')):
+            raise Http404("One or more paragraphs do not exist!")
 
+        label = _get_label(self.context.request, data.get('label_id'))
 
-@api.put("/entries/{entry_id}", response=JournalEntrySchemaOut, tags=['entries'])
-def update_entry(request, entry_id: int, payload: JournalEntrySchemaIn):
-    entry = _get_entry(request, entry_id)
-    new_entry_data = payload.dict()
-    return EntryService.update_entry(entry, new_entry_data)
+        EntryService.assign_label_to_paragraphs(
+            paragraphs=paragraphs,
+            label=label
+        )
+        return entry
 
+    @route.post("/{entry_id}/remove_label", response=JournalEntrySchemaOut)
+    def remove_label(self, entry_id: int, payload: RemoveLabelSchemaIn):
+        entry = _get_entry(self.context.request, entry_id)
+        data = payload.dict()
 
-@api.patch("/entries/{entry_id}", response=JournalEntrySchemaOut, tags=['entries'])
-def update_entry_partial(request, entry_id: int, payload: JournalEntrySchemaIn):
-    entry = _get_entry(request, entry_id)
-    new_entry_data = payload.dict()
-    return EntryService.update_entry(entry, new_entry_data)
+        paragraph = get_object_or_404(entry.paragraphs, order=data.get('paragraph_order'))
+        label = _get_label(self.context.request, data.get('label_id'))
 
+        EntryService.remove_label_from_paragraph(
+            paragraph=paragraph,
+            label=label
+        )
+        return entry
 
-@api.post("/entries/{entry_id}/assign_label", response=JournalEntrySchemaOut, tags=['entries'])
-def assign_label(request, entry_id: int, payload: AssignLabelSchemaIn):
-    entry = _get_entry(request, entry_id)
-    data = payload.dict()
-
-    paragraphs = entry.paragraphs.filter(order__in=data.get('paragraph_orders'))
-    if paragraphs.count() != len(data.get('paragraph_orders')):
-        raise Http404("One or more paragraphs do not exist!")
-
-    label = _get_label(request, data.get('label_id'))
-
-    EntryService.assign_label_to_paragraphs(
-        paragraphs=paragraphs,
-        label=label
-    )
-    return entry
-
-
-@api.post("/entries/{entry_id}/remove_label", response=JournalEntrySchemaOut, tags=['entries'])
-def remove_label(request, entry_id: int, payload: RemoveLabelSchemaIn):
-    entry = _get_entry(request, entry_id)
-    data = payload.dict()
-
-    paragraph = get_object_or_404(entry.paragraphs, order=data.get('paragraph_order'))
-    label = _get_label(request, data.get('label_id'))
-
-    EntryService.remove_label_from_paragraph(
-        paragraph=paragraph,
-        label=label
-    )
-    return entry
-
-
-@api.delete("/entries/{entry_id}", tags=['entries'])
-def delete_entry(request, entry_id: int):
-    entry = _get_entry(request, entry_id)
-    EntryService.delete_entry(entry)
-    return {"success": True}
+    @route.delete("/{entry_id}")
+    def delete_entry(self, entry_id: int):
+        entry = _get_entry(self.context.request, entry_id)
+        EntryService.delete_entry(entry)
+        return {"success": True}
 
 
 @api_controller("/labels", tags=["labels"], auth=JWTAuth())
@@ -154,4 +142,5 @@ class LabelsController:
         return {"success": True}
 
 
+api.register_controllers(EntriesController)
 api.register_controllers(LabelsController)
