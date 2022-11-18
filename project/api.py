@@ -9,7 +9,7 @@ from ninja_jwt.controller import NinjaJWTDefaultController
 from project.models import Label
 from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
     LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
-    ChangePasswordSchema
+    ChangePasswordSchema, UserSchemaOut
 from project.services import EntryService, UserService
 
 api = NinjaExtraAPI(title="LaJournal API")
@@ -28,7 +28,12 @@ def _get_label(request, label_id: int):
     return get_object_or_404(_get_user(request).labels.all(), id=label_id)
 
 
-@api.put("/change-password", tags=['auth'])
+@api.get("/me", response=UserSchemaOut, tags=['auth'], auth=JWTAuth())
+def me(request):
+    return _get_user(request)
+
+
+@api.put("/change-password", tags=['auth'], auth=JWTAuth())
 def change_password(request, payload: ChangePasswordSchema):
     user = _get_user(request)
     UserService.change_password(

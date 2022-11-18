@@ -110,4 +110,5 @@ class UserService:
         user.set_password(new_password)
         user.save()
 
+        # FIXME: Remove token model
         UserService.invalidate_user_tokens(user)
