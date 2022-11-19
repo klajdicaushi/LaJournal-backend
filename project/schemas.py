@@ -8,11 +8,6 @@ from pydantic import Field
 from project.models import JournalEntry, Label, EntryParagraph
 
 
-class LoginSchema(Schema):
-    username: str
-    password: str
-
-
 class ChangePasswordSchema(Schema):
     new_password: str
 
@@ -21,11 +16,6 @@ class UserSchemaOut(ModelSchema):
     class Config:
         model = User
         model_fields = ("id", "username", "first_name", "last_name", "email")
-
-
-class LoginSuccessfulSchemaOut(Schema):
-    user: UserSchemaOut
-    token: str
 
 
 class JournalFiltersSchema(Schema):

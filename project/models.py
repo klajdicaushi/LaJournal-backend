@@ -7,12 +7,6 @@ from django.db import models
 from project.utils import TrackedModel
 
 
-class Token(models.Model):
-    value = models.CharField(max_length=36, primary_key=True)
-    user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="tokens")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
 class JournalEntry(TrackedModel):
     user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="journal_entries")
     title = models.CharField(max_length=200, null=True)

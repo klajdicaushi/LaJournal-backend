@@ -21,6 +21,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'project',
     'ninja_extra',
+    'ninja_jwt',
+    'ninja_jwt.token_blacklist',
 ]
 
 MIDDLEWARE = [

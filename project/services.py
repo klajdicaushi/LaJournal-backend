@@ -4,7 +4,7 @@ from typing import Iterable, Optional
 from django.contrib.auth.models import User
 from django.db.models import Count
 
-from project.models import JournalEntry, EntryParagraph, Label, Token
+from project.models import JournalEntry, EntryParagraph, Label
 from project.types import EntryDataIn
 
 
@@ -85,30 +85,9 @@ class EntryService:
 
 class UserService:
     @staticmethod
-    def generate_token(user: User, invalidate_previous_tokens=True) -> Token:
-        if invalidate_previous_tokens:
-            user.tokens.all().delete()
-
-        return Token.objects.create(
-            user=user,
-            value=str(uuid.uuid4())
-        )
-
-    @staticmethod
-    def get_user_by_token(token: str) -> Optional[User]:
-        try:
-            return Token.objects.get(value=token).user
-        except Token.DoesNotExist:
-            return None
-
-    @staticmethod
-    def invalidate_user_tokens(user: User):
-        user.tokens.all().delete()
-
-    @staticmethod
     def change_password(user: User, new_password: str):
         user.set_password(new_password)
         user.save()
 
-        # FIXME: Remove token model
-        UserService.invalidate_user_tokens(user)
+        # FIXME: Implement this through token blacklist
+        user.tokens.all().delete()
