@@ -2,14 +2,16 @@ from django.contrib.auth.models import User
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from ninja import Query
+from ninja.errors import HttpError
 from ninja_extra import NinjaExtraAPI, api_controller, route
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.controller import NinjaJWTDefaultController
+from ninja_jwt.exceptions import TokenError
 
 from project.models import Label
 from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
     LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
-    ChangePasswordSchema, UserSchemaOut
+    ChangePasswordSchema, UserSchemaOut, LogOutSchema
 from project.services import EntryService, UserService
 
 api = NinjaExtraAPI(title="LaJournal API")
@@ -38,9 +40,18 @@ def change_password(request, payload: ChangePasswordSchema):
     user = _get_user(request)
     UserService.change_password(
         user=user,
-        new_password=payload.dict().get('new_password')
+        new_password=payload.new_password
     )
     return {"success": True}
+
+
+@api.post("/token/invalidate", tags=['token'], auth=JWTAuth())
+def invalidate_token(request, payload: LogOutSchema):
+    try:
+        UserService.invalidate_refresh_token(payload.refresh_token)
+        return {"success": True}
+    except TokenError as e:
+        raise HttpError(400, str(e))
 
 
 @api_controller("/entries", tags=["entries"], auth=JWTAuth())

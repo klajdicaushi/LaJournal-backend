@@ -12,6 +12,10 @@ class ChangePasswordSchema(Schema):
     new_password: str
 
 
+class LogOutSchema(Schema):
+    refresh_token: str
+
+
 class UserSchemaOut(ModelSchema):
     class Config:
         model = User

@@ -1,8 +1,9 @@
-import uuid
-from typing import Iterable, Optional
+from typing import Iterable
 
 from django.contrib.auth.models import User
 from django.db.models import Count
+from ninja_jwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from ninja_jwt.tokens import RefreshToken
 
 from project.models import JournalEntry, EntryParagraph, Label
 from project.types import EntryDataIn
@@ -85,9 +86,14 @@ class EntryService:
 
 class UserService:
     @staticmethod
+    def invalidate_refresh_token(refresh_token: str):
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+
+    @staticmethod
     def change_password(user: User, new_password: str):
         user.set_password(new_password)
         user.save()
 
-        # FIXME: Implement this through token blacklist
-        user.tokens.all().delete()
+        for token in OutstandingToken.objects.filter(user=user):
+            BlacklistedToken.objects.get_or_create(token=token)
