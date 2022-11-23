@@ -1,10 +1,9 @@
-import os
+from datetime import timedelta
 
 import dj_database_url
 from django.core.management.utils import get_random_secret_key
 
 from .defaults import *  # noqa
-
 
 SECRET_KEY = get_random_secret_key()
 
@@ -35,7 +34,6 @@ LOGGING = {
         },
     },
 }
-
 
 NINJA_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
