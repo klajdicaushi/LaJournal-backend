@@ -38,7 +38,7 @@ def me(request):
 
 @api.get("/debug", tags=['debug'], auth=None)
 def debug(request):
-    return {'secret': settings.SECRET_KEY}
+    return {'secret': str(settings.__dict__)}
 
 
 @api.put("/change-password", tags=['auth'], auth=JWTAuth())
