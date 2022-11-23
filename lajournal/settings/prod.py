@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 
 import dj_database_url
@@ -5,7 +6,7 @@ from django.core.management.utils import get_random_secret_key
 
 from .defaults import *  # noqa
 
-SECRET_KEY = get_random_secret_key()
+SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
 DEBUG = False
 ALLOWED_HOSTS = ['*']
@@ -38,5 +39,4 @@ LOGGING = {
 NINJA_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'SIGNING_KEY': SECRET_KEY,
 }
