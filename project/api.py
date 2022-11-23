@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -33,6 +34,11 @@ def _get_label(request, label_id: int):
 @api.get("/me", response=UserSchemaOut, tags=['auth'], auth=JWTAuth())
 def me(request):
     return _get_user(request)
+
+
+@api.get("/debug", tags=['debug'], auth=None)
+def debug(request):
+    return {'secret': settings.SECRET_KEY}
 
 
 @api.put("/change-password", tags=['auth'], auth=JWTAuth())
