@@ -41,7 +41,15 @@ NINJA_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
+# Default settings for Ninja Extra
 NINJA_EXTRA = {
     'PAGINATION_PER_PAGE': 100,
-    'NUM_PROXIES': None
+    'NUM_PROXIES': None,
+    'INJECTOR_MODULES': [],
+    'PAGINATION_CLASS': "ninja_extra.pagination.LimitOffsetPagination",
+    'THROTTLE_CLASSES': [
+        "ninja_extra.throttling.AnonRateThrottle",
+        "ninja_extra.throttling.UserRateThrottle",
+    ],
+    'THROTTLE_RATES': {"user": None, "anon": None},
 }
