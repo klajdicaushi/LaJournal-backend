@@ -40,3 +40,9 @@ NINJA_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
+
+
+NINJA_EXTRA = {
+    'PAGINATION_PER_PAGE': 100,
+    'NUM_PROXIES': None
+}
