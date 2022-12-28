@@ -12,7 +12,7 @@ class ChangePasswordSchema(Schema):
     new_password: str
 
 
-class LogOutSchema(Schema):
+class RefreshTokenSchema(Schema):
     refresh_token: str
 
 

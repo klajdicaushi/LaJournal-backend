@@ -7,11 +7,12 @@ from ninja_extra import NinjaExtraAPI, api_controller, route
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.controller import NinjaJWTDefaultController
 from ninja_jwt.exceptions import TokenError
+from ninja_jwt.tokens import RefreshToken
 
 from project.models import Label
 from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
     LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
-    ChangePasswordSchema, UserSchemaOut, LogOutSchema
+    ChangePasswordSchema, UserSchemaOut, RefreshTokenSchema
 from project.services import EntryService, UserService
 
 api = NinjaExtraAPI(title="LaJournal API")
@@ -45,8 +46,30 @@ def change_password(request, payload: ChangePasswordSchema):
     return {"success": True}
 
 
+@api.post("/token/refresh-tokens", tags=['token'], auth=None)
+def refresh_tokens(request, payload: RefreshTokenSchema):
+    """
+    Refresh both tokens (access and refresh) using refresh token.
+    """
+
+    try:
+        refresh_token = RefreshToken(payload.refresh_token)
+    except TokenError as e:
+        raise HttpError(400, str(e))
+
+    user_id = refresh_token.payload.get('user_id')
+    user = User.objects.get(id=user_id)
+
+    new_refresh_token = RefreshToken.for_user(user)
+
+    return {
+        "refresh": str(new_refresh_token),
+        "access": str(new_refresh_token.access_token)
+    }
+
+
 @api.post("/token/invalidate", tags=['token'], auth=JWTAuth())
-def invalidate_token(request, payload: LogOutSchema):
+def invalidate_token(request, payload: RefreshTokenSchema):
     try:
         UserService.invalidate_refresh_token(payload.refresh_token)
         return {"success": True}
