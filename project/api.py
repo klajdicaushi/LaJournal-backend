@@ -166,7 +166,7 @@ class LabelsController:
     def create_label(self, payload: LabelSchemaIn):
         return Label.objects.create(user=_get_user(self.context.request), **payload.dict())
 
-    @route.put("/labels/{label_id}", response=LabelSchemaOut)
+    @route.put("/{label_id}", response=LabelSchemaOut)
     def update_label(self, label_id: int, payload: LabelSchemaIn):
         label = _get_label(self.context.request, label_id)
         for attr, value in payload.dict().items():
@@ -174,7 +174,7 @@ class LabelsController:
         label.save()
         return label
 
-    @route.delete("/labels/{label_id}")
+    @route.delete("/{label_id}")
     def delete_label(self, label_id: int):
         label = _get_label(self.context.request, label_id)
         label.delete()
