@@ -157,7 +157,7 @@ class LabelsController:
     def get_label(self, label_id: int):
         return _get_label(self.context.request, label_id)
 
-    @route.get("/labels/{label_id}/paragraphs", response=list[LabelParagraphSchemaOut])
+    @route.get("/{label_id}/paragraphs", response=list[LabelParagraphSchemaOut])
     def get_label_paragraphs(self, label_id: int):
         label = _get_label(self.context.request, label_id)
         return label.paragraphs.all().order_by('-entry__date', 'id').select_related('entry')
