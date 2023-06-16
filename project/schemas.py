@@ -98,6 +98,8 @@ class LabelParagraphsCountSchemaOut(Schema):
 
 
 class EntryStatsOut(Schema):
+    entries_this_month: int
+    entries_this_year: int
     total_entries: int
     latest_entry: Optional[EntrySimpleSchemaOut]
     total_labels_used: int

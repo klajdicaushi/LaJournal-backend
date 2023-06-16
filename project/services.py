@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Iterable
 
 from django.contrib.auth.models import User
@@ -75,7 +76,15 @@ class EntryService:
             paragraphs_count=Count('paragraphs')
         ).order_by('-paragraphs_count').exclude(paragraphs_count=0)
 
+        first_day_of_month = date.today().replace(day=1)
+
+        entries = user.journal_entries
+        entries_this_month = entries.filter(created_at__date__gte=first_day_of_month).count()
+        entries_this_year = entries.filter(created_at__date__year=date.today().year).count()
+
         return {
+            'entries_this_month': entries_this_month,
+            'entries_this_year': entries_this_year,
             'total_entries': user.journal_entries.count(),
             'latest_entry': user.journal_entries.last(),
             'total_labels_used': user.labels.exclude(paragraphs=None).count(),
