@@ -8,7 +8,7 @@ from .defaults import *  # noqa
 
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = [".herokuapp.com"]
 
 DATABASES = {
