@@ -8,7 +8,7 @@ from .defaults import *  # noqa
 
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = [".herokuapp.com"]
 
 DATABASES = {
@@ -60,4 +60,11 @@ STATIC_URL = '/static/'
 
 INSTALLED_APPS.insert(0, 'whitenoise.runserver_nostatic')
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
