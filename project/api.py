@@ -9,6 +9,7 @@ from ninja_jwt.controller import NinjaJWTDefaultController
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
+from project.exceptions import PasswordError
 from project.models import Label
 from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
     LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
@@ -39,10 +40,16 @@ def me(request):
 @api.put("/change-password", tags=['auth'], auth=JWTAuth())
 def change_password(request, payload: ChangePasswordSchema):
     user = _get_user(request)
-    UserService.change_password(
-        user=user,
-        new_password=payload.new_password
-    )
+
+    try:
+        UserService.change_password(
+            user=user,
+            current_password=payload.current_password,
+            new_password=payload.new_password
+        )
+    except PasswordError as e:
+        raise HttpError(400, str(e))
+
     return {"success": True}
 
 

@@ -2,10 +2,13 @@ from datetime import date
 from typing import Iterable
 
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db.models import Count
 from ninja_jwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from ninja_jwt.tokens import RefreshToken
 
+from project.exceptions import PasswordError
 from project.models import JournalEntry, EntryParagraph, Label
 from project.types import EntryDataIn
 
@@ -100,7 +103,15 @@ class UserService:
         token.blacklist()
 
     @staticmethod
-    def change_password(user: User, new_password: str):
+    def change_password(user: User, current_password: str, new_password: str):
+        if not user.check_password(current_password):
+            raise PasswordError("Current password is incorrect!")
+
+        try:
+            validate_password(new_password)
+        except ValidationError as e:
+            raise PasswordError(" ".join(e.messages))
+
         user.set_password(new_password)
         user.save()
 

@@ -9,6 +9,7 @@ from project.models import JournalEntry, Label, EntryParagraph
 
 
 class ChangePasswordSchema(Schema):
+    current_password: str
     new_password: str
 
 
