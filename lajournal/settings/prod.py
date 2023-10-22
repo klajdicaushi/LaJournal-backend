@@ -54,4 +54,8 @@ NINJA_EXTRA = {
     'THROTTLE_RATES': {"user": None, "anon": None},
 }
 
+# Deploying static files through Whtienoise
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
