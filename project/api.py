@@ -12,7 +12,7 @@ from ninja_jwt.tokens import RefreshToken
 from project.models import Label
 from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
     LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
-    ChangePasswordSchema, UserSchemaOut, RefreshTokenSchema
+    ChangePasswordSchema, UserSchemaOut, RefreshTokenSchema, EntrySimpleSchemaOut
 from project.services import EntryService, UserService
 
 api = NinjaExtraAPI(title="LaJournal API")
@@ -83,7 +83,7 @@ class EntriesController:
     def get_stats(self):
         return EntryService.get_stats(user=_get_user(self.context.request))
 
-    @route.get("", response=list[JournalEntrySchemaOut])
+    @route.get("", response=list[EntrySimpleSchemaOut])
     def get_journal_entries(self, filters: JournalFiltersSchema = Query(...)):
         entries = _get_user(self.context.request).journal_entries.all().order_by('-date', '-id')
         for key, value in filters.dict().items():

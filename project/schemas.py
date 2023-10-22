@@ -88,7 +88,7 @@ class JournalEntrySchemaOut(ModelSchema):
 class EntrySimpleSchemaOut(ModelSchema):
     class Config:
         model = JournalEntry
-        model_fields = ['id', 'created_at', 'title']
+        model_fields = ['id', 'created_at', 'title', 'date']
 
 
 class LabelParagraphsCountSchemaOut(Schema):
