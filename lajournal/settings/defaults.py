@@ -16,10 +16,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-    'project',
     'ninja_extra',
     'ninja_jwt',
     'ninja_jwt.token_blacklist',
+    'project',
 ]
 
 MIDDLEWARE = [
