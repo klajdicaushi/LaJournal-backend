@@ -59,6 +59,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 INSTALLED_APPS.insert(0, 'whitenoise.runserver_nostatic')
-INSTALLED_APPS.remove('django.contrib.staticfiles')
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
