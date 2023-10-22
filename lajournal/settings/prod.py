@@ -53,3 +53,5 @@ NINJA_EXTRA = {
     ],
     'THROTTLE_RATES': {"user": None, "anon": None},
 }
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
