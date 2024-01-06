@@ -80,6 +80,11 @@ class EntryService:
         entry.delete()
 
     @staticmethod
+    def toggle_bookmark(entry: JournalEntry):
+        entry.is_bookmarked = not entry.is_bookmarked
+        entry.save()
+
+    @staticmethod
     def get_stats(user: User):
         labels_paragraphs_count = user.labels.all().annotate(
             paragraphs_count=Count('paragraphs')

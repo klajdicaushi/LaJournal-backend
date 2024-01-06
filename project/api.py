@@ -147,6 +147,12 @@ class EntriesController:
         )
         return entry
 
+    @route.post("/{entry_id}/toggle_bookmark", response=JournalEntrySchemaOut)
+    def toggle_bookmark(self, entry_id: int):
+        entry = _get_entry(self.context.request, entry_id)
+        EntryService.toggle_bookmark(entry)
+        return entry
+
     @route.delete("/{entry_id}")
     def delete_entry(self, entry_id: int):
         entry = _get_entry(self.context.request, entry_id)

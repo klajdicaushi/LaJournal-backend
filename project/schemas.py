@@ -83,7 +83,7 @@ class JournalEntrySchemaOut(ModelSchema):
 
     class Config:
         model = JournalEntry
-        model_fields = ['id', 'created_at', 'updated_at', 'title', 'date', 'rating']
+        model_fields = ['id', 'created_at', 'updated_at', 'title', 'date', 'rating', 'is_bookmarked']
 
 
 class EntrySimpleSchemaOut(ModelSchema):

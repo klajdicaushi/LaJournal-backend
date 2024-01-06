@@ -12,6 +12,7 @@ class JournalEntry(TrackedModel):
     title = models.CharField(max_length=200, null=True)
     date = models.DateField(default=date.today)
     rating = models.FloatField(null=True, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    is_bookmarked = models.BooleanField(default=False)
 
 
 class Label(TrackedModel):
