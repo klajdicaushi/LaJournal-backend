@@ -95,15 +95,17 @@ class EntryService:
         entries = user.journal_entries
         entries_this_month = entries.filter(created_at__date__gte=first_day_of_month).count()
         entries_this_year = entries.filter(created_at__date__year=date.today().year).count()
+        bookmarked_entries = entries.filter(is_bookmarked=True).count()
 
         return {
             'entries_this_month': entries_this_month,
             'entries_this_year': entries_this_year,
-            'total_entries': user.journal_entries.count(),
-            'latest_entry': user.journal_entries.last(),
+            'total_entries': entries.count(),
+            'latest_entry': entries.last(),
             'total_labels_used': user.labels.exclude(paragraphs=None).count(),
             'most_used_label': labels_paragraphs_count.first(),
             'labels_paragraphs_count': list(labels_paragraphs_count),
+            'bookmarked_entries': bookmarked_entries
         }
 
 

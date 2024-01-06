@@ -107,6 +107,7 @@ class EntryStatsOut(Schema):
     total_labels_used: int
     most_used_label: Optional[LabelParagraphsCountSchemaOut]
     labels_paragraphs_count: list[LabelParagraphsCountSchemaOut]
+    bookmarked_entries: int
 
 
 class LabelParagraphSchemaOut(ModelSchema):
