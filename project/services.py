@@ -38,25 +38,31 @@ class EntryService:
         entry.save()
 
         if paragraphs is not None:
+            existing_paragraphs_by_order = {p.order: p for p in entry.paragraphs.all()}
+            paragraphs_to_create = []
+
             # If paragraphs count has changed,
             # we cannot keep the existing labels,
             # as it is unclear to which paragraphs they belong
-            if len(paragraphs) != entry.paragraphs.count():
-                # Delete all existing paragraphs
-                entry.paragraphs.all().delete()
+            should_delete_labels = len(paragraphs) != len(entry.paragraphs.all())
 
-                # Create new paragraphs
-                EntryParagraph.objects.bulk_create([EntryParagraph(
-                    entry=entry,
-                    order=paragraph.get('order'),
-                    content=paragraph.get('content')
-                ) for paragraph in paragraphs])
-            else:
-                # Update existing paragraphs
-                for paragraph in paragraphs:
-                    entry_paragraph = entry.paragraphs.get(order=paragraph.get('order'))
+            for paragraph in paragraphs:
+                entry_paragraph = existing_paragraphs_by_order.get(paragraph.get('order'))
+                if entry_paragraph is None:
+                    paragraphs_to_create.append(EntryParagraph(
+                        entry=entry,
+                        order=paragraph.get('order'),
+                        content=paragraph.get('content')
+                    ))
+                else:
                     entry_paragraph.content = paragraph.get('content')
+                    if should_delete_labels:
+                        entry_paragraph.labels.clear()
                     entry_paragraph.save()
+
+            # Create new paragraphs
+            if paragraphs_to_create:
+                EntryParagraph.objects.bulk_create(paragraphs_to_create)
 
         return entry
 
