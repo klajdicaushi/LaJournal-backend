@@ -24,7 +24,7 @@ class UserSchemaOut(ModelSchema):
 
 
 class JournalFiltersSchema(Schema):
-    paragraphs__labels__id__in: list[int] = Field(None, alias="labels")
+    title__icontains: str = Field(None, alias="search_query")
     is_bookmarked: bool = Field(None, alias="bookmarked")
 
 
