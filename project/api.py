@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from ninja import Query
@@ -94,8 +95,17 @@ class EntriesController:
     def get_journal_entries(self, filters: JournalFiltersSchema = Query(...)):
         entries = _get_user(self.context.request).journal_entries.all().order_by('-date', '-id')
         for key, value in filters.dict().items():
-            if value is not None:
+            if value is None:
+                continue
+
+            if key == "search_query":
+                entries = entries.filter(
+                    Q(title__icontains=value) |
+                    Q(paragraphs__content__icontains=value)
+                )
+            else:
                 entries = entries.filter(**{key: value})
+
         return entries.distinct()
 
     @route.get("/{entry_id}", response=JournalEntrySchemaOut)
