@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal, Optional
 
 from django.contrib.auth.models import User
@@ -108,6 +109,17 @@ class EntryStatsOut(Schema):
     most_used_label: Optional[LabelParagraphsCountSchemaOut]
     labels_paragraphs_count: list[LabelParagraphsCountSchemaOut]
     bookmarked_entries: int
+
+
+class PeriodTimelineSchemaOut(Schema):
+    period: date
+    count: int
+
+
+class TimelineSchemaOut(Schema):
+    week: list[PeriodTimelineSchemaOut]
+    month: list[PeriodTimelineSchemaOut]
+    year: list[PeriodTimelineSchemaOut]
 
 
 class LabelParagraphSchemaOut(ModelSchema):

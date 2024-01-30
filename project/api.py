@@ -14,7 +14,7 @@ from project.exceptions import PasswordError
 from project.models import Label
 from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
     LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
-    ChangePasswordSchema, UserSchemaOut, RefreshTokenSchema, EntrySimpleSchemaOut
+    ChangePasswordSchema, UserSchemaOut, RefreshTokenSchema, EntrySimpleSchemaOut, TimelineSchemaOut
 from project.services import EntryService, UserService
 
 api = NinjaExtraAPI(title="LaJournal API")
@@ -90,6 +90,12 @@ class EntriesController:
     @route.get("/stats", response=EntryStatsOut)
     def get_stats(self):
         return EntryService.get_stats(user=_get_user(self.context.request))
+
+    @route.get("/timeline", response=TimelineSchemaOut)
+    def get_timeline(self):
+        return EntryService.get_timeline(
+            user=_get_user(self.context.request),
+        )
 
     @route.get("", response=list[EntrySimpleSchemaOut])
     def get_journal_entries(self, filters: JournalFiltersSchema = Query(...)):

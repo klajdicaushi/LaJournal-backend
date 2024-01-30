@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db.models import Count
+from django.db.models.functions import TruncMonth, TruncYear, TruncWeek
 from ninja_jwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from ninja_jwt.tokens import RefreshToken
 
@@ -106,6 +107,22 @@ class EntryService:
             'most_used_label': labels_paragraphs_count.first(),
             'labels_paragraphs_count': list(labels_paragraphs_count),
             'bookmarked_entries': bookmarked_entries
+        }
+
+    @staticmethod
+    def _get_timeline_for_period(entries, truncate_function):
+        return list(entries.annotate(
+            period=truncate_function("created_at")
+        ).values('period').annotate(count=Count('id')).order_by('period'))
+
+    @staticmethod
+    def get_timeline(user: User):
+        entries = user.journal_entries.all()
+
+        return {
+            "week": EntryService._get_timeline_for_period(entries, TruncWeek),
+            "month": EntryService._get_timeline_for_period(entries, TruncMonth),
+            "year": EntryService._get_timeline_for_period(entries, TruncYear),
         }
 
 
