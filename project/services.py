@@ -94,8 +94,8 @@ class EntryService:
         first_day_of_month = date.today().replace(day=1)
 
         entries = user.journal_entries
-        entries_this_month = entries.filter(created_at__date__gte=first_day_of_month).count()
-        entries_this_year = entries.filter(created_at__date__year=date.today().year).count()
+        entries_this_month = entries.filter(date__gte=first_day_of_month).count()
+        entries_this_year = entries.filter(date__year=date.today().year).count()
         bookmarked_entries = entries.filter(is_bookmarked=True).count()
 
         return {
@@ -112,7 +112,7 @@ class EntryService:
     @staticmethod
     def _get_timeline_for_period(entries, truncate_function):
         return list(entries.annotate(
-            period=truncate_function("created_at")
+            period=truncate_function("date")
         ).values('period').annotate(count=Count('id')).order_by('period'))
 
     @staticmethod
