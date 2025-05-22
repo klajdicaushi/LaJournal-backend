@@ -1,12 +1,12 @@
 from datetime import date
-from typing import Literal, Optional
+from typing import Literal
 
 from django.contrib.auth.models import User
 from ninja import ModelSchema
 from ninja.schema import Schema
 from pydantic import Field
 
-from project.models import JournalEntry, Label, EntryParagraph
+from project.models import EntryParagraph, JournalEntry, Label
 
 
 class ChangePasswordSchema(Schema):
@@ -32,25 +32,31 @@ class JournalFiltersSchema(Schema):
 class LabelSchemaIn(ModelSchema):
     class Config:
         model = Label
-        model_exclude = ['id', 'created_at', 'updated_at', 'user']
+        model_exclude = ["id", "created_at", "updated_at", "user"]
 
 
 class LabelSchemaOut(ModelSchema):
     class Config:
         model = Label
-        model_fields = ['id', 'created_at', 'updated_at', 'name', 'description']
+        model_fields = ["id", "created_at", "updated_at", "name", "description"]
 
 
 class LabelSchemaOutSimple(ModelSchema):
     class Config:
         model = Label
-        model_fields = ['id', 'name']
+        model_fields = ["id", "name"]
 
 
 class EntryParagraphSchemaIn(ModelSchema):
     class Config:
         model = EntryParagraph
-        model_fields = ['order', 'content']
+        model_fields = ["order", "content"]
+
+
+class EntryParagraphSimpleSchemaOut(ModelSchema):
+    class Config:
+        model = EntryParagraph
+        model_fields = ["order", "content"]
 
 
 class EntryParagraphSchemaOut(ModelSchema):
@@ -58,17 +64,17 @@ class EntryParagraphSchemaOut(ModelSchema):
 
     class Config:
         model = EntryParagraph
-        model_fields = ['order', 'content', 'labels']
+        model_fields = ["order", "content", "labels"]
 
 
 class JournalEntrySchemaIn(ModelSchema):
-    rating: Optional[Literal[1, 2, 3, 4, 5]]
+    rating: Literal[1, 2, 3, 4, 5] | None
     paragraphs: list[EntryParagraphSchemaIn]
 
     class Config:
         model = JournalEntry
-        model_exclude = ['id', 'created_at', 'updated_at', 'user']
-        
+        model_exclude = ["id", "created_at", "updated_at", "user"]
+
 
 class AssignLabelSchemaIn(Schema):
     paragraph_orders: list[int]
@@ -85,13 +91,30 @@ class JournalEntrySchemaOut(ModelSchema):
 
     class Config:
         model = JournalEntry
-        model_fields = ['id', 'created_at', 'updated_at', 'title', 'date', 'rating', 'is_bookmarked']
+        model_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+            "title",
+            "date",
+            "rating",
+            "is_bookmarked",
+        ]
 
 
 class EntrySimpleSchemaOut(ModelSchema):
     class Config:
         model = JournalEntry
-        model_fields = ['id', 'created_at', 'title', 'date', 'rating', 'is_bookmarked']
+        model_fields = ["id", "created_at", "title", "date", "rating", "is_bookmarked"]
+
+
+class EntrySearchSchemaOut(Schema):
+    id: int
+    title: str
+    date: date
+    rating: Literal[1, 2, 3, 4, 5] | None
+    is_bookmarked: bool
+    matching_paragraphs: list[EntryParagraphSimpleSchemaOut]
 
 
 class LabelParagraphsCountSchemaOut(Schema):
@@ -104,9 +127,9 @@ class EntryStatsOut(Schema):
     entries_this_month: int
     entries_this_year: int
     total_entries: int
-    latest_entry: Optional[EntrySimpleSchemaOut]
+    latest_entry: EntrySimpleSchemaOut | None
     total_labels_used: int
-    most_used_label: Optional[LabelParagraphsCountSchemaOut]
+    most_used_label: LabelParagraphsCountSchemaOut | None
     labels_paragraphs_count: list[LabelParagraphsCountSchemaOut]
     bookmarked_entries: int
 
@@ -127,4 +150,4 @@ class LabelParagraphSchemaOut(ModelSchema):
 
     class Config:
         model = EntryParagraph
-        model_fields = ['id', 'content']
+        model_fields = ["id", "content"]

@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from project.utils import TrackedModel
@@ -14,6 +14,9 @@ class JournalEntry(TrackedModel):
     rating = models.FloatField(null=True, validators=[MinValueValidator(1), MaxValueValidator(5)])
     is_bookmarked = models.BooleanField(default=False)
 
+    def __hash__(self):
+        return hash(self.id)
+
 
 class Label(TrackedModel):
     user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name="labels")
@@ -21,7 +24,7 @@ class Label(TrackedModel):
     description = models.TextField(null=True)
 
     class Meta:
-        ordering = ['-id']
+        ordering = ["-id"]
 
 
 class EntryParagraph(models.Model):
@@ -31,4 +34,4 @@ class EntryParagraph(models.Model):
     labels = models.ManyToManyField(to=Label, related_name="paragraphs")
 
     class Meta:
-        ordering = ['order']
+        ordering = ["order"]

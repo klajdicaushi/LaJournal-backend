@@ -12,9 +12,23 @@ from ninja_jwt.tokens import RefreshToken
 
 from project.exceptions import PasswordError
 from project.models import Label
-from project.schemas import AssignLabelSchemaIn, JournalEntrySchemaIn, JournalEntrySchemaOut, LabelSchemaOut, \
-    LabelSchemaIn, RemoveLabelSchemaIn, EntryStatsOut, JournalFiltersSchema, LabelParagraphSchemaOut, \
-    ChangePasswordSchema, UserSchemaOut, RefreshTokenSchema, EntrySimpleSchemaOut, TimelineSchemaOut
+from project.schemas import (
+    AssignLabelSchemaIn,
+    ChangePasswordSchema,
+    EntrySearchSchemaOut,
+    EntrySimpleSchemaOut,
+    EntryStatsOut,
+    JournalEntrySchemaIn,
+    JournalEntrySchemaOut,
+    JournalFiltersSchema,
+    LabelParagraphSchemaOut,
+    LabelSchemaIn,
+    LabelSchemaOut,
+    RefreshTokenSchema,
+    RemoveLabelSchemaIn,
+    TimelineSchemaOut,
+    UserSchemaOut,
+)
 from project.services import EntryService, UserService
 
 api = NinjaExtraAPI(title="LaJournal API")
@@ -33,12 +47,12 @@ def _get_label(request, label_id: int):
     return get_object_or_404(_get_user(request).labels.all(), id=label_id)
 
 
-@api.get("/me", response=UserSchemaOut, tags=['auth'], auth=JWTAuth())
+@api.get("/me", response=UserSchemaOut, tags=["auth"], auth=JWTAuth())
 def me(request):
     return _get_user(request)
 
 
-@api.put("/change-password", tags=['auth'], auth=JWTAuth())
+@api.put("/change-password", tags=["auth"], auth=JWTAuth())
 def change_password(request, payload: ChangePasswordSchema):
     user = _get_user(request)
 
@@ -46,7 +60,7 @@ def change_password(request, payload: ChangePasswordSchema):
         UserService.change_password(
             user=user,
             current_password=payload.current_password,
-            new_password=payload.new_password
+            new_password=payload.new_password,
         )
     except PasswordError as e:
         raise HttpError(400, str(e))
@@ -54,7 +68,7 @@ def change_password(request, payload: ChangePasswordSchema):
     return {"success": True}
 
 
-@api.post("/token/refresh-tokens", tags=['token'], auth=None)
+@api.post("/token/refresh-tokens", tags=["token"], auth=None)
 def refresh_tokens(request, payload: RefreshTokenSchema):
     """
     Refresh both tokens (access and refresh) using refresh token.
@@ -65,18 +79,18 @@ def refresh_tokens(request, payload: RefreshTokenSchema):
     except TokenError as e:
         raise HttpError(400, str(e))
 
-    user_id = refresh_token.payload.get('user_id')
+    user_id = refresh_token.payload.get("user_id")
     user = User.objects.get(id=user_id)
 
     new_refresh_token = RefreshToken.for_user(user)
 
     return {
         "refresh": str(new_refresh_token),
-        "access": str(new_refresh_token.access_token)
+        "access": str(new_refresh_token.access_token),
     }
 
 
-@api.post("/token/invalidate", tags=['token'], auth=JWTAuth())
+@api.post("/token/invalidate", tags=["token"], auth=JWTAuth())
 def invalidate_token(request, payload: RefreshTokenSchema):
     try:
         UserService.invalidate_refresh_token(payload.refresh_token)
@@ -99,20 +113,41 @@ class EntriesController:
 
     @route.get("", response=list[EntrySimpleSchemaOut])
     def get_journal_entries(self, filters: JournalFiltersSchema = Query(...)):
-        entries = _get_user(self.context.request).journal_entries.all().order_by('-date', '-id')
+        entries = _get_user(self.context.request).journal_entries.all().order_by("-date", "-id")
         for key, value in filters.dict().items():
             if value is None:
                 continue
 
             if key == "search_query":
-                entries = entries.filter(
-                    Q(title__icontains=value) |
-                    Q(paragraphs__content__icontains=value)
-                )
+                entries = entries.filter(Q(title__icontains=value) | Q(paragraphs__content__icontains=value))
             else:
                 entries = entries.filter(**{key: value})
 
         return entries.distinct()
+
+    @route.get("/search", response=list[EntrySearchSchemaOut])
+    def search_journal_entries(self, search_query: str):
+        user = _get_user(self.context.request)
+
+        entries_data = EntryService.search_entries(user=user, search_query=search_query)
+
+        return [
+            {
+                "id": entry.id,
+                "title": entry.title,
+                "date": entry.date,
+                "rating": entry.rating,
+                "is_bookmarked": entry.is_bookmarked,
+                "matching_paragraphs": [
+                    {
+                        "order": paragraph.order,
+                        "content": paragraph.content,
+                    }
+                    for paragraph in sorted(paragraphs, key=lambda x: x.order)
+                ],
+            }
+            for entry, paragraphs in sorted(entries_data.items(), key=lambda x: x[0].date, reverse=True)
+        ]
 
     @route.get("/{entry_id}", response=JournalEntrySchemaOut)
     def get_journal_entry(self, entry_id: int):
@@ -121,10 +156,7 @@ class EntriesController:
     @route.post("", response=JournalEntrySchemaOut)
     def create_journal_entry(self, payload: JournalEntrySchemaIn):
         entry_data = payload.dict()
-        return EntryService.create_entry(
-            user=_get_user(self.context.request),
-            entry_data=entry_data
-        )
+        return EntryService.create_entry(user=_get_user(self.context.request), entry_data=entry_data)
 
     @route.put("/{entry_id}", response=JournalEntrySchemaOut)
     def update_entry(self, entry_id: int, payload: JournalEntrySchemaIn):
@@ -137,16 +169,13 @@ class EntriesController:
         entry = _get_entry(self.context.request, entry_id)
         data = payload.dict()
 
-        paragraphs = entry.paragraphs.filter(order__in=data.get('paragraph_orders'))
-        if paragraphs.count() != len(data.get('paragraph_orders')):
+        paragraphs = entry.paragraphs.filter(order__in=data.get("paragraph_orders"))
+        if paragraphs.count() != len(data.get("paragraph_orders")):
             raise Http404("One or more paragraphs do not exist!")
 
-        label = _get_label(self.context.request, data.get('label_id'))
+        label = _get_label(self.context.request, data.get("label_id"))
 
-        EntryService.assign_label_to_paragraphs(
-            paragraphs=paragraphs,
-            label=label
-        )
+        EntryService.assign_label_to_paragraphs(paragraphs=paragraphs, label=label)
         return entry
 
     @route.post("/{entry_id}/remove_label", response=JournalEntrySchemaOut)
@@ -154,13 +183,10 @@ class EntriesController:
         entry = _get_entry(self.context.request, entry_id)
         data = payload.dict()
 
-        paragraph = get_object_or_404(entry.paragraphs, order=data.get('paragraph_order'))
-        label = _get_label(self.context.request, data.get('label_id'))
+        paragraph = get_object_or_404(entry.paragraphs, order=data.get("paragraph_order"))
+        label = _get_label(self.context.request, data.get("label_id"))
 
-        EntryService.remove_label_from_paragraph(
-            paragraph=paragraph,
-            label=label
-        )
+        EntryService.remove_label_from_paragraph(paragraph=paragraph, label=label)
         return entry
 
     @route.post("/{entry_id}/toggle_bookmark", response=JournalEntrySchemaOut)
@@ -189,7 +215,7 @@ class LabelsController:
     @route.get("/{label_id}/paragraphs", response=list[LabelParagraphSchemaOut])
     def get_label_paragraphs(self, label_id: int):
         label = _get_label(self.context.request, label_id)
-        return label.paragraphs.all().order_by('-entry__date', 'id').select_related('entry')
+        return label.paragraphs.all().order_by("-entry__date", "id").select_related("entry")
 
     @route.post("", response=LabelSchemaOut)
     def create_label(self, payload: LabelSchemaIn):

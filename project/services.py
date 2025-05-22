@@ -1,37 +1,39 @@
+from collections import defaultdict
+from collections.abc import Iterable
 from datetime import date
-from typing import Iterable
 
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db.models import Count
-from django.db.models.functions import TruncMonth, TruncYear, TruncWeek
-from ninja_jwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from django.db.models.functions import TruncMonth, TruncWeek, TruncYear
+from ninja_jwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from ninja_jwt.tokens import RefreshToken
 
 from project.exceptions import PasswordError
-from project.models import JournalEntry, EntryParagraph, Label
+from project.models import EntryParagraph, JournalEntry, Label
 from project.types import EntryDataIn
 
 
 class EntryService:
     @staticmethod
     def create_entry(user: User, entry_data: EntryDataIn):
-        paragraphs = entry_data.pop('paragraphs', [])
+        paragraphs = entry_data.pop("paragraphs", [])
 
         entry = user.journal_entries.create(**entry_data)
 
-        EntryParagraph.objects.bulk_create([EntryParagraph(
-            entry=entry,
-            order=paragraph.get('order'),
-            content=paragraph.get('content')
-        ) for paragraph in paragraphs])
+        EntryParagraph.objects.bulk_create(
+            [
+                EntryParagraph(entry=entry, order=paragraph.get("order"), content=paragraph.get("content"))
+                for paragraph in paragraphs
+            ]
+        )
 
         return entry
 
     @staticmethod
     def update_entry(entry: JournalEntry, new_entry_data: EntryDataIn):
-        paragraphs = new_entry_data.pop('paragraphs', None)
+        paragraphs = new_entry_data.pop("paragraphs", None)
 
         for attr, value in new_entry_data.items():
             if value is not None:
@@ -48,15 +50,13 @@ class EntryService:
             should_delete_labels = len(paragraphs) != len(entry.paragraphs.all())
 
             for paragraph in paragraphs:
-                entry_paragraph = existing_paragraphs_by_order.get(paragraph.get('order'))
+                entry_paragraph = existing_paragraphs_by_order.get(paragraph.get("order"))
                 if entry_paragraph is None:
-                    paragraphs_to_create.append(EntryParagraph(
-                        entry=entry,
-                        order=paragraph.get('order'),
-                        content=paragraph.get('content')
-                    ))
+                    paragraphs_to_create.append(
+                        EntryParagraph(entry=entry, order=paragraph.get("order"), content=paragraph.get("content"))
+                    )
                 else:
-                    entry_paragraph.content = paragraph.get('content')
+                    entry_paragraph.content = paragraph.get("content")
                     if should_delete_labels:
                         entry_paragraph.labels.clear()
                     entry_paragraph.save()
@@ -87,9 +87,12 @@ class EntryService:
 
     @staticmethod
     def get_stats(user: User):
-        labels_paragraphs_count = user.labels.all().annotate(
-            paragraphs_count=Count('paragraphs')
-        ).order_by('-paragraphs_count').exclude(paragraphs_count=0)
+        labels_paragraphs_count = (
+            user.labels.all()
+            .annotate(paragraphs_count=Count("paragraphs"))
+            .order_by("-paragraphs_count")
+            .exclude(paragraphs_count=0)
+        )
 
         first_day_of_month = date.today().replace(day=1)
 
@@ -99,21 +102,21 @@ class EntryService:
         bookmarked_entries = entries.filter(is_bookmarked=True).count()
 
         return {
-            'entries_this_month': entries_this_month,
-            'entries_this_year': entries_this_year,
-            'total_entries': entries.count(),
-            'latest_entry': entries.last(),
-            'total_labels_used': user.labels.exclude(paragraphs=None).count(),
-            'most_used_label': labels_paragraphs_count.first(),
-            'labels_paragraphs_count': list(labels_paragraphs_count),
-            'bookmarked_entries': bookmarked_entries
+            "entries_this_month": entries_this_month,
+            "entries_this_year": entries_this_year,
+            "total_entries": entries.count(),
+            "latest_entry": entries.last(),
+            "total_labels_used": user.labels.exclude(paragraphs=None).count(),
+            "most_used_label": labels_paragraphs_count.first(),
+            "labels_paragraphs_count": list(labels_paragraphs_count),
+            "bookmarked_entries": bookmarked_entries,
         }
 
     @staticmethod
     def _get_timeline_for_period(entries, truncate_function):
-        return list(entries.annotate(
-            period=truncate_function("date")
-        ).values('period').annotate(count=Count('id')).order_by('period'))
+        return list(
+            entries.annotate(period=truncate_function("date")).values("period").annotate(count=Count("id")).order_by("period")
+        )
 
     @staticmethod
     def get_timeline(user: User):
@@ -124,6 +127,21 @@ class EntryService:
             "month": EntryService._get_timeline_for_period(entries, TruncMonth),
             "year": EntryService._get_timeline_for_period(entries, TruncYear),
         }
+
+    @staticmethod
+    def search_entries(user: User, search_query: str) -> dict[JournalEntry, list[EntryParagraph]]:
+        entries_data: dict[JournalEntry, list[EntryParagraph]] = defaultdict(list)
+        paragraphs_matching_content = EntryParagraph.objects.filter(content__icontains=search_query).select_related("entry")
+
+        for paragraph in paragraphs_matching_content:
+            entries_data[paragraph.entry].append(paragraph)
+
+        entries_matching_title = user.journal_entries.filter(title__icontains=search_query)
+        for entry in entries_matching_title:
+            if entry not in entries_data:
+                entries_data[entry] = []
+
+        return entries_data
 
 
 class UserService:
