@@ -9,7 +9,7 @@ from .defaults import *  # noqa
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
 DEBUG = False
-ALLOWED_HOSTS = [".herokuapp.com"]
+ALLOWED_HOSTS = [".herokuapp.com", ".onrender.com"]
 
 DATABASES = {
     'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
