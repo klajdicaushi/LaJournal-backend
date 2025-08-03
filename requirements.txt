@@ -5,3 +5,4 @@ gunicorn
 django-on-heroku
 django-ninja-jwt
 six
+whitenoise[brotli]
