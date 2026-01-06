@@ -20,6 +20,7 @@ dependencies = [
     "django-ninja>=1.5.1",
     "django-ninja-jwt>=5.4.2",
     "gunicorn>=23.0.0",
+    "psycopg[binary]>=3.3.2",
     "six>=1.17.0",
     "uvicorn>=0.40.0",
     "whitenoise[brotli]>=6.11.0",
