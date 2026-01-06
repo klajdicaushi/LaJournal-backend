@@ -1,3 +1,29 @@
+[project]
+name = "lajournal-backend"
+authors = []
+version = "1.0.0"
+description = "LaJournal Backend"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["lajournal", "backend", "journal", "diary"]
+classifiers = [
+  "License :: Other/Proprietary License",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [
+    "django>=5.2.9",
+    "django-cors-headers>=4.9.0",
+    "django-ninja>=1.5.1",
+    "django-ninja-jwt>=5.4.2",
+    "gunicorn>=23.0.0",
+    "six>=1.17.0",
+    "uvicorn>=0.40.0",
+    "whitenoise[brotli]>=6.11.0",
+]
+
 [tool.ruff]
 line-length = 130
 target-version = "py311"

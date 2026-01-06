@@ -1,9 +1,0 @@
-Django
-django-ninja
-django-cors-headers
-gunicorn
-django-on-heroku
-django-ninja-jwt
-six
-whitenoise[brotli]
-uvicorn

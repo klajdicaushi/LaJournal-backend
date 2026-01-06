@@ -19,9 +19,9 @@ class RefreshTokenSchema(Schema):
 
 
 class UserSchemaOut(ModelSchema):
-    class Config:
+    class Meta:
         model = User
-        model_fields = ("id", "username", "first_name", "last_name", "email")
+        fields = ("id", "username", "first_name", "last_name", "email")
 
 
 class JournalFiltersSchema(Schema):
@@ -30,50 +30,50 @@ class JournalFiltersSchema(Schema):
 
 
 class LabelSchemaIn(ModelSchema):
-    class Config:
+    class Meta:
         model = Label
-        model_exclude = ["id", "created_at", "updated_at", "user"]
+        exclude = ["id", "created_at", "updated_at", "user"]
 
 
 class LabelSchemaOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Label
-        model_fields = ["id", "created_at", "updated_at", "name", "description"]
+        fields = ["id", "created_at", "updated_at", "name", "description"]
 
 
 class LabelSchemaOutSimple(ModelSchema):
-    class Config:
+    class Meta:
         model = Label
-        model_fields = ["id", "name"]
+        fields = ["id", "name"]
 
 
 class EntryParagraphSchemaIn(ModelSchema):
-    class Config:
+    class Meta:
         model = EntryParagraph
-        model_fields = ["order", "content"]
+        fields = ["order", "content"]
 
 
 class EntryParagraphSimpleSchemaOut(ModelSchema):
-    class Config:
+    class Meta:
         model = EntryParagraph
-        model_fields = ["order", "content"]
+        fields = ["order", "content"]
 
 
 class EntryParagraphSchemaOut(ModelSchema):
     labels: list[LabelSchemaOutSimple]
 
-    class Config:
+    class Meta:
         model = EntryParagraph
-        model_fields = ["order", "content", "labels"]
+        fields = ["order", "content", "labels"]
 
 
 class JournalEntrySchemaIn(ModelSchema):
     rating: Literal[1, 2, 3, 4, 5] | None
     paragraphs: list[EntryParagraphSchemaIn]
 
-    class Config:
+    class Meta:
         model = JournalEntry
-        model_exclude = ["id", "created_at", "updated_at", "user"]
+        exclude = ["id", "created_at", "updated_at", "user"]
 
 
 class AssignLabelSchemaIn(Schema):
@@ -89,9 +89,9 @@ class RemoveLabelSchemaIn(Schema):
 class JournalEntrySchemaOut(ModelSchema):
     paragraphs: list[EntryParagraphSchemaOut]
 
-    class Config:
+    class Meta:
         model = JournalEntry
-        model_fields = [
+        fields = [
             "id",
             "created_at",
             "updated_at",
@@ -103,9 +103,9 @@ class JournalEntrySchemaOut(ModelSchema):
 
 
 class EntrySimpleSchemaOut(ModelSchema):
-    class Config:
+    class Meta:
         model = JournalEntry
-        model_fields = ["id", "created_at", "title", "date", "rating", "is_bookmarked"]
+        fields = ["id", "created_at", "title", "date", "rating", "is_bookmarked"]
 
 
 class EntrySearchSchemaOut(Schema):
@@ -148,6 +148,6 @@ class TimelineSchemaOut(Schema):
 class LabelParagraphSchemaOut(ModelSchema):
     entry: EntrySimpleSchemaOut
 
-    class Config:
+    class Meta:
         model = EntryParagraph
-        model_fields = ["id", "content"]
+        fields = ["id", "content"]
