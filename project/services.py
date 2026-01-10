@@ -41,6 +41,7 @@ class EntryService:
         entry.save()
 
         if paragraphs is not None:
+            paragraph_orders_in_request = {p.get("order") for p in paragraphs}
             existing_paragraphs_by_order = {p.order: p for p in entry.paragraphs.all()}
             paragraphs_to_create = []
 
@@ -64,6 +65,12 @@ class EntryService:
             # Create new paragraphs
             if paragraphs_to_create:
                 EntryParagraph.objects.bulk_create(paragraphs_to_create)
+
+            # Delete paragraphs that are not in the request
+            existing_paragraph_orders = set(existing_paragraphs_by_order.keys())
+            paragraph_orders_to_delete = existing_paragraph_orders - paragraph_orders_in_request
+            if paragraph_orders_to_delete:
+                entry.paragraphs.filter(order__in=paragraph_orders_to_delete).delete()
 
         return entry
 
