@@ -13,6 +13,7 @@ class JournalEntry(TrackedModel):
     date = models.DateField(default=date.today)
     rating = models.FloatField(null=True, validators=[MinValueValidator(1), MaxValueValidator(5)])
     is_bookmarked = models.BooleanField(default=False)
+    json_content = models.JSONField(null=True)
 
     def __hash__(self):
         return hash(self.id)

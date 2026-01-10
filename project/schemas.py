@@ -70,6 +70,7 @@ class EntryParagraphSchemaOut(ModelSchema):
 class JournalEntrySchemaIn(ModelSchema):
     rating: Literal[1, 2, 3, 4, 5] | None
     paragraphs: list[EntryParagraphSchemaIn]
+    json_content: dict | None
 
     class Meta:
         model = JournalEntry
@@ -99,6 +100,7 @@ class JournalEntrySchemaOut(ModelSchema):
             "date",
             "rating",
             "is_bookmarked",
+            "json_content",
         ]
 
 
